@@ -1,9 +1,10 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { PaletteMode } from '@mui/material';
+
+type ThemeMode = 'light' | 'dark';
 
 interface ThemeStore {
-  mode: PaletteMode;
+  mode: ThemeMode;
   toggleMode: () => void;
 }
 

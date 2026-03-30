@@ -1,5 +1,4 @@
 import { Navigate } from 'react-router-dom';
-import { Box, CircularProgress } from '@mui/material';
 import { useAuth } from '../../hooks/useAuth';
 import type { UserRole } from '../../types';
 
@@ -13,16 +12,9 @@ const ProtectedRoute = ({ children, allowedRoles }: Props) => {
 
   if (isLoading) {
     return (
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '100vh',
-        }}
-      >
-        <CircularProgress />
-      </Box>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
     );
   }
 
@@ -31,9 +23,9 @@ const ProtectedRoute = ({ children, allowedRoles }: Props) => {
   }
 
   if (!allowedRoles.includes(user.role)) {
-    if (user.role === 'admin') return <Navigate to="/admin" replace />;
-    if (user.role === 'salon_owner') return <Navigate to="/salon" replace />;
-    if (user.role === 'reception') return <Navigate to="/reception" replace />;
+    if (user.role === 'admin') return <Navigate to="/admin/dashboard" replace />;
+    if (user.role === 'salon_owner') return <Navigate to="/owner/dashboard" replace />;
+    if (user.role === 'reception') return <Navigate to="/reception/dashboard" replace />;
     return <Navigate to="/login" replace />;
   }
 

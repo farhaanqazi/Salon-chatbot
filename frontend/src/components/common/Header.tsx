@@ -1,6 +1,4 @@
-import { AppBar, Toolbar, Typography, Chip, Box, IconButton, Tooltip, useTheme } from '@mui/material';
-import Brightness4Icon from '@mui/icons-material/Brightness4';
-import Brightness7Icon from '@mui/icons-material/Brightness7';
+import { Sun, Moon } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useThemeStore } from '../../store/themeStore';
 import GlobalSearch from './GlobalSearch';
@@ -14,55 +12,50 @@ interface HeaderProps {
 const Header = ({ sidebarCollapsed }: HeaderProps) => {
   const { user } = useAuthStore();
   const { mode, toggleMode } = useThemeStore();
-  const theme = useTheme();
 
   const width = sidebarCollapsed ? DRAWER_COLLAPSED : DRAWER_EXPANDED;
 
   return (
-    <AppBar
-      position="fixed"
-      elevation={0}
-      sx={{
-        zIndex: theme.zIndex.drawer - 1,
-        width: `calc(100%% - ${width}px)`,
-        ml: `${width}px`,
-        transition: 'width 0.25s ease, margin-left 0.25s ease',
-        borderLeft: 'none',
-        boxShadow: 'none',
-        bgcolor: theme.palette.background.paper,
-        color: theme.palette.text.primary,
+    <header
+      className="fixed top-0 z-40 border-b border-neutral-200 dark:border-white/10 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white transition-all duration-250 ease-in-out"
+      style={{
+        width: `calc(100% - ${width}px)`,
+        marginLeft: `${width}px`,
       }}
     >
-      <Toolbar sx={{ gap: 2 }}>
-        <Box sx={{ flexGrow: 1, maxWidth: 480 }}>
+      <div className="flex items-center gap-4 px-4 h-16">
+        <div className="flex-1 max-w-xl">
           <GlobalSearch />
-        </Box>
+        </div>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 'auto' }}>
+        <div className="flex items-center gap-2 ml-auto">
           <NotificationBell />
 
-          <Tooltip title={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
-            <IconButton onClick={toggleMode} size="small" aria-label="Toggle theme">
-              {mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
-            </IconButton>
-          </Tooltip>
+          <button
+            onClick={toggleMode}
+            className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
+            aria-label="Toggle theme"
+          >
+            {mode === 'dark' ? (
+              <Sun className="w-5 h-5" strokeWidth={2} />
+            ) : (
+              <Moon className="w-5 h-5" strokeWidth={2} />
+            )}
+          </button>
 
           {user && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography variant="body2" fontWeight={500} noWrap>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-neutral-900 dark:text-white truncate max-w-[150px]">
                 {user.full_name}
-              </Typography>
-              <Chip
-                label={user.role.replace(/_/g, ' ')}
-                size="small"
-                color="primary"
-                variant="outlined"
-              />
-            </Box>
+              </span>
+              <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                {user.role.replace(/_/g, ' ')}
+              </span>
+            </div>
           )}
-        </Box>
-      </Toolbar>
-    </AppBar>
+        </div>
+      </div>
+    </header>
   );
 };
 

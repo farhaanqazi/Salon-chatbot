@@ -21,6 +21,7 @@ export type AppointmentStatus =
   | 'pending'
   | 'confirmed'
   | 'cancelled_by_client'
+  | 'cancelled_by_user'
   | 'cancelled_by_salon'
   | 'cancelled_by_reception'
   | 'cancelled_closure'
@@ -32,6 +33,7 @@ export interface CustomerSummary {
   name: string;
   phone_number: string;
   channel: string;
+  display_name?: string;
 }
 
 export interface ServiceSummary {
@@ -69,7 +71,7 @@ export interface AppointmentDetail extends Appointment {
 }
 
 export interface AppointmentListResponse {
-  items: Appointment[];
+  data: Appointment[];
   total: number;
   page: number;
   page_size: number;

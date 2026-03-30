@@ -1,12 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  InputBase, Box, Paper, List, ListItem, ListItemText,
-  ListItemIcon, Typography, CircularProgress, useTheme, alpha
-} from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
-import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
-import PersonIcon from '@mui/icons-material/Person';
+import { Search, Calendar, User } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '../../store/authStore';
 import apiClient from '../../services/apiClient';
@@ -25,7 +19,6 @@ const GlobalSearch = () => {
   const [open, setOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
-  const theme = useTheme();
   const { user } = useAuthStore();
   const debouncedQuery = useDebounce(query, 300);
 
@@ -69,103 +62,71 @@ const GlobalSearch = () => {
   };
 
   return (
-    <Box sx={{ position: 'relative', width: '100%' }}>
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
-          px: 2,
-          py: 0.75,
-          borderRadius: 2,
-          backgroundColor: theme.palette.mode === 'dark'
-            ? alpha('#FFFFFF', 0.06)
-            : alpha('#000000', 0.05),
-          border: `1px solid ${theme.palette.divider}`,
-          transition: 'all 0.2s ease',
-          '&:focus-within': {
-            borderColor: theme.palette.primary.main,
-            backgroundColor: theme.palette.background.paper,
-          },
-        }}
+    <div className="relative w-full">
+      <div
+        className="flex items-center gap-2 px-3 py-2 rounded-xl bg-neutral-100 dark:bg-white/10 border border-neutral-200 dark:border-white/10 transition-all duration-200 focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-neutral-800"
+        onClick={() => inputRef.current?.focus()}
       >
-        <SearchIcon fontSize="small" sx={{ color: 'text.secondary', flexShrink: 0 }} />
-        <InputBase
-          inputRef={inputRef}
+        <Search className="w-4 h-4 text-neutral-400 flex-shrink-0" strokeWidth={2} />
+        <input
+          ref={inputRef}
           value={query}
           onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)}
           placeholder="Search appointments, customers… (⌘K)"
-          fullWidth
-          sx={{ fontSize: 14 }}
+          className="flex-1 bg-transparent text-sm outline-none placeholder:text-neutral-400"
         />
-        {isLoading && <CircularProgress size={16} sx={{ flexShrink: 0 }} />}
-      </Box>
+        {isLoading && (
+          <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+        )}
+      </div>
 
       {open && debouncedQuery.length >= 2 && (
-        <Paper
-          elevation={8}
-          sx={{
-            position: 'absolute',
-            top: '100%',
-            left: 0,
-            right: 0,
-            mt: 0.5,
-            zIndex: 9999,
-            maxHeight: 360,
-            overflowY: 'auto',
-            borderRadius: 2,
-            border: `1px solid ${theme.palette.divider}`,
-          }}
-          onMouseDown={(e) => e.preventDefault()}
-        >
-          {!results || results.length === 0 ? (
-            <Box sx={{ p: 3, textAlign: 'center' }}>
-              <Typography variant="body2" color="text.secondary">
-                No results found for "{debouncedQuery}"
-              </Typography>
-            </Box>
-          ) : (
-            <List dense>
-              {results.map((result) => (
-                <ListItem
-                  key={result.id}
-                  component="div"
-                  onClick={() => handleSelect(result)}
-                  sx={{
-                    borderRadius: 1,
-                    mx: 0.5,
-                    cursor: 'pointer',
-                    '&:hover': {
-                      backgroundColor: alpha(theme.palette.primary.main, 0.08),
-                    },
-                  }}
-                >
-                  <ListItemIcon sx={{ minWidth: 36 }}>
-                    {result.type === 'appointment'
-                      ? <CalendarMonthIcon fontSize="small" color="primary" />
-                      : <PersonIcon fontSize="small" color="secondary" />}
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={result.title}
-                    secondary={result.subtitle}
-                    primaryTypographyProps={{ variant: 'body2', fontWeight: 500 }}
-                    secondaryTypographyProps={{ variant: 'caption' }}
-                  />
-                </ListItem>
-              ))}
-            </List>
-          )}
-        </Paper>
-      )}
+        <>
+          <div
+            className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-white/10 shadow-xl z-50 max-h-96 overflow-y-auto"
+            onMouseDown={(e) => e.preventDefault()}
+          >
+            {!results || results.length === 0 ? (
+              <div className="p-4 text-center">
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  No results found for "{debouncedQuery}"
+                </p>
+              </div>
+            ) : (
+              <ul className="py-2">
+                {results.map((result) => (
+                  <li
+                    key={result.id}
+                    onClick={() => handleSelect(result)}
+                    className="flex items-center gap-3 px-3 py-2 mx-1 rounded-lg cursor-pointer hover:bg-blue-50 dark:hover:bg-white/5 transition-colors"
+                  >
+                    <div className="w-9 h-9 flex items-center justify-center flex-shrink-0">
+                      {result.type === 'appointment'
+                        ? <Calendar className="w-5 h-5 text-blue-600" strokeWidth={2} />
+                        : <User className="w-5 h-5 text-emerald-600" strokeWidth={2} />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-neutral-900 dark:text-white truncate">
+                        {result.title}
+                      </p>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+                        {result.subtitle}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
 
-      {open && (
-        <Box
-          sx={{ position: 'fixed', inset: 0, zIndex: 9998 }}
-          onClick={() => { setOpen(false); setQuery(''); }}
-        />
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => { setOpen(false); setQuery(''); }}
+          />
+        </>
       )}
-    </Box>
+    </div>
   );
 };
 

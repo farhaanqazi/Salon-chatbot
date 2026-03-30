@@ -1,5 +1,4 @@
 import React from 'react';
-import { Box, Typography, Button } from '@mui/material';
 
 interface Props {
   children: React.ReactNode;
@@ -28,24 +27,18 @@ class ErrorBoundary extends React.Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minHeight: '100vh',
-            gap: 2,
-          }}
-        >
-          <Typography variant="h5">Something went wrong</Typography>
-          <Typography variant="body2" color="text.secondary">
+        <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6">
+          <h1 className="text-2xl font-semibold text-gray-900">Something went wrong</h1>
+          <p className="text-sm text-gray-500">
             {this.state.message}
-          </Typography>
-          <Button variant="contained" onClick={this.handleReset}>
+          </p>
+          <button
+            onClick={this.handleReset}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
+          >
             Return to Home
-          </Button>
-        </Box>
+          </button>
+        </div>
       );
     }
     return this.props.children;

@@ -1,12 +1,11 @@
 /**
  * Dashboard Data API Service
- * 
+ *
  * Fetches real-time data from Supabase via FastAPI backend
  * Mirrors the patterns from existing useKpis.ts
  */
 
 import apiClient from '../services/apiClient';
-import type { Appointment } from '../types';
 
 // ============================================================================
 // Types
@@ -59,32 +58,36 @@ export const fetchDashboardStats = async (): Promise<DashboardStats> => {
 };
 
 /**
- * Fetch today's appointments for a salon
+ * Fetch upcoming appointments for a salon
+ * MATCHES: @router.get("/salons/{salon_slug}/appointments/upcoming")
  */
-export const fetchTodayAppointments = async (salonId: string): Promise<DashboardAppointment[]> => {
-  // Use UTC dates to avoid timezone issues
-  const now = new Date();
-  const startOfDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0));
-  const endOfDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59, 59));
-
-  const { data } = await apiClient.get<{ data: Appointment[] }>('/api/v1/appointments', {
-    params: {
-      salon_id: salonId,
-      date_from: startOfDay.toISOString(),
-      date_to: endOfDay.toISOString(),
-    },
+export const fetchUpcomingAppointments = async (salonSlug: string, hours: number = 24): Promise<DashboardAppointment[]> => {
+  const { data } = await apiClient.get(`/api/v1/salons/${salonSlug}/appointments/upcoming`, {
+    params: { hours },
   });
 
-  // Transform to dashboard-friendly format
-  return data.data.map(apt => ({
+  // Backend returns: { salon: string, appointments: [...] }
+  return data.appointments.map((apt: any) => ({
     id: apt.id,
-    customer_name: apt.customer?.name || apt.customer?.phone_number || 'Unknown',
-    service_name: apt.service?.name || 'Unknown Service',
-    staff_name: null, // Backend doesn't include staff in list endpoint yet
+    customer_name: apt.customer || 'Unknown',
+    service_name: apt.service || 'Unknown Service',
+    staff_name: null,
     appointment_at: apt.appointment_at,
     status: apt.status,
-    phone_number: apt.customer?.phone_number || null,
+    phone_number: null,
   }));
+};
+
+/**
+ * Cancel an appointment
+ * MATCHES: @router.post("/appointments/{appointment_id}/cancel")
+ */
+export const cancelAppointment = async (appointmentId: string, reason: string, cancelled_by: string = 'customer'): Promise<any> => {
+  const { data } = await apiClient.post(`/api/v1/appointments/${appointmentId}/cancel`, {
+    reason,
+    cancelled_by,
+  });
+  return data;
 };
 
 /**
@@ -99,22 +102,34 @@ export const fetchStaffBySalon = async (salonId: string): Promise<StaffMember[]>
 
 /**
  * Fetch all appointments for revenue calculation
- * This is a simplified version - in production you'd have a dedicated revenue endpoint
+ * Uses GET /salons/{salon_id} endpoint and filters completed appointments
  */
 export const fetchAppointmentsForRevenue = async (
   salonId: string,
   fromDate: string,
   toDate: string
-): Promise<Appointment[]> => {
-  const { data } = await apiClient.get<{ data: Appointment[] }>('/api/v1/appointments', {
+): Promise<DashboardAppointment[]> => {
+  // Note: Backend doesn't have a dedicated revenue endpoint yet
+  // This uses the general appointments list and filters client-side
+  const { data } = await apiClient.get<{ data: any[] }>('/api/v1/appointments', {
     params: {
       salon_id: salonId,
       date_from: fromDate,
       date_to: toDate,
-      status: 'completed', // Only count completed appointments for revenue
+      status: 'completed',
     },
   });
-  return data.data;
+  
+  // Transform to DashboardAppointment format
+  return data.data.map((apt: any) => ({
+    id: apt.id,
+    customer_name: apt.customer?.display_name || apt.customer?.phone_number || 'Unknown',
+    service_name: apt.service?.name || 'Unknown Service',
+    staff_name: null,
+    appointment_at: apt.appointment_at,
+    status: apt.status,
+    phone_number: apt.customer?.phone_number || null,
+  }));
 };
 
 export interface DashboardSalonService {
@@ -126,18 +141,4 @@ export interface DashboardSalonService {
 export const fetchSalonServices = async (salonId: string): Promise<DashboardSalonService[]> => {
   const { data } = await apiClient.get<any>(`/api/v1/salons/${salonId}`);
   return data.services || [];
-};
-
-export interface CreateAppointmentPayload {
-  salon_id: string;
-  customer_name: string;
-  customer_phone: string;
-  service_id: string;
-  appointment_at: string; // ISO string
-  notes?: string;
-}
-
-export const createAppointment = async (payload: CreateAppointmentPayload): Promise<any> => {
-  const { data } = await apiClient.post('/api/v1/appointments', payload);
-  return data;
 };
