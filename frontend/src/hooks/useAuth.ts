@@ -68,6 +68,7 @@ export const useAuth = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event);
+        const currentUser = useAuthStore.getState().user;
         
         switch (event) {
           case 'SIGNED_IN':
@@ -80,25 +81,25 @@ export const useAuth = () => {
                 .single();
               
               if (userData && userData.is_active) {
-                setUser(userData as AuthUser, session.access_token);
+                useAuthStore.getState().setUser(userData as AuthUser, session.access_token);
               }
             }
             break;
 
           case 'SIGNED_OUT':
-            clearUser();
-            navigate('/login');
+            useAuthStore.getState().clearUser();
+            window.location.href = '/login';
             break;
 
           case 'TOKEN_REFRESHED':
-            if (session && user) {
+            if (session && currentUser) {
               // Update token in store (user object stays the same)
-              setUser(user, session.access_token);
+              useAuthStore.getState().setUser(currentUser, session.access_token);
             }
             break;
 
           case 'USER_UPDATED':
-            if (session && user) {
+            if (session && currentUser) {
               // Refresh user data
               const { data: userData } = await supabase!
                 .from('users')
@@ -107,7 +108,7 @@ export const useAuth = () => {
                 .single();
               
               if (userData) {
-                setUser(userData as AuthUser, session.access_token);
+                useAuthStore.getState().setUser(userData as AuthUser, session.access_token);
               }
             }
             break;
@@ -118,7 +119,7 @@ export const useAuth = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [clearUser, navigate, setUser, user]);
+  }, []);
 
   const login = useCallback(async (email: string, password: string) => {
     if (!supabase) {
@@ -134,7 +135,7 @@ export const useAuth = () => {
           is_active: true,
         };
         setUser(demoUser, 'demo-token');
-        
+        setLoading(false);
         // Navigate to dashboard
         navigate('/dashboard');
         return;
@@ -142,17 +143,23 @@ export const useAuth = () => {
     }
 
     setLoading(true);
-    
+    console.log('[useAuth.login] Starting login flow for:', email);
+
     try {
+      console.log('[useAuth.login] Calling supabase.auth.signInWithPassword...');
       const { data, error } = await supabase!.auth.signInWithPassword({
         email,
         password,
       });
-      
+
+      console.log('[useAuth.login] signInWithPassword completed. Error:', error?.message);
+
       if (error || !data.session) {
+        setLoading(false);
         throw new Error(error?.message || 'Login failed');
       }
 
+      console.log('[useAuth.login] Fetching user profile from Supabase...');
       // Fetch user profile
       const { data: userData, error: userError } = await supabase!
         .from('users')
@@ -160,22 +167,34 @@ export const useAuth = () => {
         .eq('id', data.session.user.id)
         .single();
       
+      console.log('[useAuth.login] User profile fetched. Error:', userError?.message);
+
       if (userError || !userData) {
+        setLoading(false);
         throw new Error('User profile not found. Contact your administrator.');
       }
-      
+
       if (!userData.is_active) {
+        setLoading(false);
         throw new Error('Your account is inactive. Contact your administrator.');
       }
 
+      // Explicitly set the user to state BEFORE navigating to avoid ProtectedRoute bouncing back
+      console.log('[useAuth.login] Setting user state synchronously...');
+      useAuthStore.getState().setUser(userData as AuthUser, data.session.access_token);
+
+      console.log('[useAuth.login] Navigation triggered. Role:', userData.role);
       // Navigate to unified dashboard
       if (userData.role) {
+        setLoading(false);
         navigate('/dashboard');
       } else {
+        setLoading(false);
         navigate('/login');
       }
-      
+
     } catch (error) {
+      console.error('[useAuth.login] Exception caught:', error);
       setLoading(false);
       throw error;
     }

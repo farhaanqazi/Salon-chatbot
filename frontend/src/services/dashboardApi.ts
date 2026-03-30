@@ -62,20 +62,23 @@ export const fetchDashboardStats = async (): Promise<DashboardStats> => {
  * Fetch today's appointments for a salon
  */
 export const fetchTodayAppointments = async (salonId: string): Promise<DashboardAppointment[]> => {
-  const today = new Date().toISOString().split('T')[0];
-  
+  // Use UTC dates to avoid timezone issues
+  const now = new Date();
+  const startOfDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0));
+  const endOfDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59, 59));
+
   const { data } = await apiClient.get<{ data: Appointment[] }>('/api/v1/appointments', {
     params: {
       salon_id: salonId,
-      date_from: `${today}T00:00:00`,
-      date_to: `${today}T23:59:59`,
+      date_from: startOfDay.toISOString(),
+      date_to: endOfDay.toISOString(),
     },
   });
 
   // Transform to dashboard-friendly format
   return data.data.map(apt => ({
     id: apt.id,
-    customer_name: apt.customer?.display_name || apt.customer?.phone_number || 'Unknown',
+    customer_name: apt.customer?.name || apt.customer?.phone_number || 'Unknown',
     service_name: apt.service?.name || 'Unknown Service',
     staff_name: null, // Backend doesn't include staff in list endpoint yet
     appointment_at: apt.appointment_at,
@@ -112,4 +115,29 @@ export const fetchAppointmentsForRevenue = async (
     },
   });
   return data.data;
+};
+
+export interface DashboardSalonService {
+  id: string;
+  name: string;
+  duration_minutes: number;
+}
+
+export const fetchSalonServices = async (salonId: string): Promise<DashboardSalonService[]> => {
+  const { data } = await apiClient.get<any>(`/api/v1/salons/${salonId}`);
+  return data.services || [];
+};
+
+export interface CreateAppointmentPayload {
+  salon_id: string;
+  customer_name: string;
+  customer_phone: string;
+  service_id: string;
+  appointment_at: string; // ISO string
+  notes?: string;
+}
+
+export const createAppointment = async (payload: CreateAppointmentPayload): Promise<any> => {
+  const { data } = await apiClient.post('/api/v1/appointments', payload);
+  return data;
 };

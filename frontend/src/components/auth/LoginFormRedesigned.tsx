@@ -69,11 +69,14 @@ const LoginFormRedesigned = () => {
   } = useForm<FormData>({ resolver: zodResolver(schema) });
 
   const onSubmit = async (data: FormData) => {
+    console.log('[LoginForm] onSubmit triggered', data.email);
     setAuthError(null);
     clearErrors();
     try {
       await login(data.email, data.password);
+      console.log('[LoginForm] onSubmit promise resolved correctly');
     } catch (err: any) {
+      console.error('[LoginForm] onSubmit promise rejected', err);
       const message = err instanceof Error ? err.message : 'Authentication failed. Please check your email and password.';
       setAuthError(message);
     }

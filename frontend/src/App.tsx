@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useRef } from 'react';
-import { AnimatePresence } from 'motion/react';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import LoginRedesigned from './pages/LoginRedesigned';
@@ -27,7 +26,6 @@ const App = () => {
     <ErrorBoundary>
       <QueryClientProvider client={queryClientRef.current}>
         <BrowserRouter>
-          <AnimatePresence mode="wait">
             <Routes>
               {/* Modern Auth View (Pure Tailwind + Custom UI) */}
               <Route path="/login" element={<LoginRedesigned />} />
@@ -45,7 +43,6 @@ const App = () => {
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
-          </AnimatePresence>
         </BrowserRouter>
       </QueryClientProvider>
     </ErrorBoundary>
